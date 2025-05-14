@@ -78,36 +78,34 @@
 <body>
 <div class="container">
     <h1>Objektų vizitavimo skaičiuoklė</h1>
-
     <div id="entries"></div>
-    <button onclick="addEntry()">+ Pridėti važiavimą</button>
-    <button onclick="calculateTotal()">Skaičiuoti bendrą kainą</button>
+    <button onclick="addSequentialEntry()">+ Pridėti važiavimą</button>
+    <button onclick="calculateSequentialTotal()">Skaičiuoti</button>
     <button onclick="resetCalculator()">🔁 Skaičiuoti iš naujo</button>
-
     <div class="result-total" id="totalResult"></div>
 
     <div class="explanation">
         <strong>Kaip skaičiuojama:</strong>
         <ul>
-            <li><strong>Atstumas iki pirmojo objekto:</strong> tai kelias, kurį reikia nuvažiuoti nuo Vilniaus centro iki pirmojo objekto (neįtraukiant kelionių tarp objektų ar grįžimo).</li>
+            <li><strong>Atstumas iki pirmojo objekto:</strong> skaičiuojamas nuo Vilniaus centro</li>
+            <li><strong>Sekantys miestai:</strong> atstumas skaičiuojamas nuo paskutinio aplankyto miesto</li>
             <li><strong>Objekto kaina:</strong> 40 € už kiekvieną objektą</li>
             <li><strong>Laiko sąnaudos:</strong> 0.35 € už kiekvieną nuvažiuotą kilometrą</li>
-            <li><strong>Bendras principas:</strong> bendra suma sudaroma iš objektų kainos ir kelionės kaštų</li>
-            <li><strong>Pavyzdys:</strong> jei yra 6 objektai ir 100 km kelionės → 6×40 € + 100×0.35 € = 240 € + 35 € = 275 €</li>
         </ul>
     </div>
 </div>
 
 <script>
 let entryCount = 0;
+let lastLocationKm = 0;
 
-function addEntry() {
+function addSequentialEntry() {
     const container = document.getElementById("entries");
     const div = document.createElement("div");
     div.className = "entry";
     div.innerHTML = `
         <label>Važiavimas #${entryCount + 1}</label>
-        <label>Atstumas (km iki pirmojo objekto):</label>
+        <label>Atstumas (km ${entryCount === 0 ? 'nuo Vilniaus centro' : 'nuo ankstesnio miesto'}):</label>
         <input type="number" id="distance_${entryCount}" placeholder="Įveskite km">
         <label>Objektų skaičius:</label>
         <input type="number" id="objects_${entryCount}" placeholder="Įveskite kiekį">
@@ -117,25 +115,29 @@ function addEntry() {
     entryCount++;
 }
 
-function calculateTotal() {
+function calculateSequentialTotal() {
     let grandTotal = 0;
     let totalObjects = 0;
+    lastLocationKm = 0;
+
     for (let i = 0; i < entryCount; i++) {
         const distance = parseFloat(document.getElementById(`distance_${i}`).value);
         const objects = parseInt(document.getElementById(`objects_${i}`).value);
 
         if (isNaN(distance) || isNaN(objects) || distance < 0 || objects <= 0) {
-            document.getElementById(`result_${i}`).innerHTML = "\u26A0\uFE0F Netinkami duomenys.";
+            document.getElementById(`result_${i}`).innerHTML = "⚠️ Netinkami duomenys.";
             continue;
         }
 
-        const travelCost = distance * 0.35;
+        const travelDistance = distance;
+        const travelCost = travelDistance * 0.35;
         const objectCost = objects * 40;
         const total = travelCost + objectCost;
         const perObj = (total / objects).toFixed(2);
 
         grandTotal += total;
         totalObjects += objects;
+        lastLocationKm = distance;
 
         document.getElementById(`result_${i}`).innerHTML = `Šio važiavimo kaina: <strong>${total.toFixed(2)} €</strong><br>
             Vidutinė kaina už objektą: <strong>${perObj} €</strong><br>
@@ -147,15 +149,14 @@ function calculateTotal() {
         Vidutinė kaina už objektą: <strong>${grandPerObj} €</strong>`;
 }
 
-// Pridedame vieną lauką automatiškai pradžioje
-window.onload = () => {
-    entryCount = 0;
-    document.getElementById("entries").innerHTML = "";
-    addEntry();
-};
 function resetCalculator() {
     location.reload();
 }
+
+// Automatinis pirmo laukelio įkėlimas
+window.onload = () => {
+    addSequentialEntry();
+};
 </script>
 </body>
 </html>
